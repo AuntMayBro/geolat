@@ -1,0 +1,27 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Checked In!{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto mt-10 text-center">
+    <div class="bg-white p-8 rounded-xl shadow-lg">
+        <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+        </div>
+        <h1 class="text-2xl font-bold">Check-In Successful!</h1>
+        <p class="text-gray-600 mt-2">Your attendance has been recorded, {{ record.student_name }}.</p>
+        {% if session.session_type == 'double' %}
+            <p class="mt-4 p-3 bg-yellow-100 text-yellow-800 rounded-lg">Please keep this page open. A 'Check-Out' button will appear when enabled by the teacher.</p>
+        {% endif %}
+        <a href="{% url 'student_form' session.session_id %}" class="mt-6 inline-block text-blue-600 hover:underline">Go back to attendance page</a>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    // Store the checkin token in localStorage
+    const token = '{{ checkin_token }}';
+    const storageKey = `attendance_token_{{ session.session_id }}`;
+    localStorage.setItem(storageKey, token);
+</script>
+{% endblock %}

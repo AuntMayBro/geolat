@@ -1,0 +1,106 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Mark Attendance{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto mt-10">
+    <div class="bg-white p-8 rounded-xl shadow-lg text-center">
+        <h1 class="text-2xl font-bold mb-2">{{ session.title }}</h1>
+        <p class="text-gray-600 mb-6">Please enter your details to mark your attendance.</p>
+
+        <form id="attendance-form" method="post" class="space-y-6">
+            {% csrf_token %}
+            <input type="hidden" name="fingerprint" id="fingerprint">
+            
+            <div>
+                <label for="student_name" class="sr-only">Full Name</label>
+                <input type="text" name="student_name" id="student_name" placeholder="Full Name" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label for="roll_number" class="sr-only">Roll Number</label>
+                <input 
+                    type="text" 
+                    name="roll_number" 
+                    id="roll_number" 
+                    placeholder="{{ roll_number_format.placeholder }}" 
+                    title="{{ roll_number_format.title }}"
+                    pattern="{{ roll_number_format.pattern }}"
+                    required 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                <p class="text-xs text-gray-500 text-left mt-1">{{ roll_number_format.title }}</p>
+            </div>
+            
+            <input type="hidden" name="checkin_token" id="checkin_token">
+
+            <div id="button-container">
+                </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    // A simple fingerprinting script. For production, consider a more robust library like FingerprintJS.
+    const getFingerprint = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const txt = 'i9asdm..$#po((^@KbXr9';
+        ctx.textBaseline = "top";
+        ctx.font = "14px 'Arial'";
+        ctx.textBaseline = "alphabetic";
+        ctx.fillStyle = "#f60";
+        ctx.fillRect(125, 1, 62, 20);
+        ctx.fillStyle = "#069";
+        ctx.fillText(txt, 2, 15);
+        ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+        ctx.fillText(txt, 4, 17);
+        return canvas.toDataURL();
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('fingerprint').value = getFingerprint();
+        
+        const form = document.getElementById('attendance-form');
+        const buttonContainer = document.getElementById('button-container');
+        const rollNumberInput = document.getElementById('roll_number');
+        const tokenInput = document.getElementById('checkin_token');
+        const sessionType = "{{ session.session_type }}";
+        const checkoutEnabled = "{{ session.checkout_enabled }}" === "True";
+        
+        const storageKey = `attendance_token_{{ session.session_id }}`;
+        const storedToken = localStorage.getItem(storageKey);
+
+        function updateButtons() {
+            buttonContainer.innerHTML = ''; // Clear buttons
+            
+            if (storedToken) {
+                // User has already checked in
+                tokenInput.value = storedToken;
+                if (sessionType === 'double' && checkoutEnabled) {
+                    const checkOutButton = document.createElement('button');
+                    checkOutButton.type = 'submit';
+                    checkOutButton.name = 'action';
+                    checkOutButton.value = 'check-out';
+                    checkOutButton.className = 'w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors';
+                    checkOutButton.textContent = 'Check Out';
+                    buttonContainer.appendChild(checkOutButton);
+                } else if (sessionType === 'double' && !checkoutEnabled) {
+                     buttonContainer.innerHTML = '<p class="text-yellow-600">You have checked in. Please wait for the teacher to enable check-out.</p>';
+                } else {
+                     buttonContainer.innerHTML = '<p class="text-green-600">You have successfully checked in.</p>';
+                }
+            } else {
+                // User has not checked in yet
+                const checkInButton = document.createElement('button');
+                checkInButton.type = 'submit';
+                checkInButton.name = 'action';
+                checkInButton.value = 'check-in';
+                checkInButton.className = 'w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors';
+                checkInButton.textContent = 'Check In';
+                buttonContainer.appendChild(checkInButton);
+            }
+        }
+        
+        updateButtons();
+    });
+</script>
+{% endblock %}

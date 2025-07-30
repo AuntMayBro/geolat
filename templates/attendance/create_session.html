@@ -1,0 +1,73 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Create Session{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+    <h1 class="text-2xl font-bold mb-6 text-center">Create New Attendance Session</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div class="space-y-6">
+            <div>
+                <label for="title" class="block text-sm font-medium text-gray-700">Session Title</label>
+                <input type="text" name="title" id="title" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label for="session_type" class="block text-sm font-medium text-gray-700">Session Type</label>
+                <select name="session_type" id="session_type" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <option value="single">Single Check-In</option>
+                    <option value="double">Double Check-In</option>
+                </select>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="start_time" class="block text-sm font-medium text-gray-700">Start Time</label>
+                    <input type="datetime-local" name="start_time" id="start_time" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="end_time" class="block text-sm font-medium text-gray-700">End Time</label>
+                    <input type="datetime-local" name="end_time" id="end_time" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+             <div>
+                <label for="min_interval" class="block text-sm font-medium text-gray-700">Min Interval (minutes for Double Check-In)</label>
+                <input type="number" name="min_interval" id="min_interval" value="5" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <fieldset class="border-t pt-4">
+                <legend class="text-lg font-medium text-gray-800 mb-3">Roll Number Format (Optional)</legend>
+                <p class="text-sm text-gray-500 mb-4">Leave fields blank if you do not want to enforce a specific format.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label for="roll_number_prefix" class="block text-sm font-medium text-gray-700">Starts With (Prefix)</label>
+                        <input type="text" name="roll_number_prefix" id="roll_number_prefix" placeholder="e.g., CS" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="roll_number_letters" class="block text-sm font-medium text-gray-700"># of Alphabets</label>
+                        <input type="number" name="roll_number_letters" id="roll_number_letters" placeholder="e.g., 3" min="0" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="roll_number_digits" class="block text-sm font-medium text-gray-700"># of Digits</label>
+                        <input type="number" name="roll_number_digits" id="roll_number_digits" placeholder="e.g., 4" min="0" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="border-t pt-4">
+                <legend class="text-sm font-medium text-gray-700 mb-2">Optional: Wi-Fi Credentials for QR Code</legend>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="wifi_ssid" class="block text-sm font-medium text-gray-700">Wi-Fi Name (SSID)</label>
+                        <input type="text" name="wifi_ssid" id="wifi_ssid" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="wifi_password" class="block text-sm font-medium text-gray-700">Wi-Fi Password</label>
+                        <input type="text" name="wifi_password" id="wifi_password" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+        <div class="mt-8">
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition-colors">Create Session</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

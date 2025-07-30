@@ -1,0 +1,841 @@
+{% extends 'geolat/base.html' %}
+{% load static %}
+
+{% block title %}GeoLat | Smart, Secure, Simple Attendance Tracking{% endblock %}
+
+{% block body_class %}bg-white text-gray-800 antialiased{% endblock %}
+
+{% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<style>
+    /* --- FONT & GENERAL STYLES --- */
+    body {
+        overflow-x: hidden;
+        font-family: 'Inter', sans-serif;
+        background-color: #f8f9fa; 
+        user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+    }
+
+    /* --- HERO PARTICLE BACKGROUND --- */
+    #hero-canvas-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        opacity: 0.5;
+    }
+
+    /* --- 3D CANVAS & INTERACTION --- */
+    .three-canvas-container {
+        position: relative;
+        width: 100%;
+        height: 400px;
+        cursor: grab;
+        border-radius: 1rem;
+        background-color: #f7faff;
+        touch-action: none;
+        box-shadow: 0 10px 30px rgba(0, 82, 212, 0.05);
+        border: 1px solid #e5e7eb;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .three-canvas-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 82, 212, 0.1);
+    }
+    .three-canvas-container:active {
+        cursor: grabbing;
+    }
+    .three-canvas-container canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+    .interaction-hint {
+        position: absolute;
+        bottom: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        color: rgba(0, 0, 0, 0.4);
+        font-size: 0.8rem;
+        font-weight: 500;
+        pointer-events: none;
+        transition: opacity 0.5s ease;
+        opacity: 1;
+        text-align: center;
+        white-space: pre;
+        background-color: rgba(255, 255, 255, 0.5);
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        backdrop-filter: blur(4px);
+    }
+    .three-canvas-container.interacted .interaction-hint {
+        opacity: 0;
+    }
+
+    /* --- GRADIENT & BUTTONS --- */
+    .gradient-text {
+        background: linear-gradient(90deg, #0052D4, #4364F7, #6FB1FC);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .cta-button-primary {
+        background: linear-gradient(90deg, #0052D4, #4364F7);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(67, 100, 247, 0.2);
+    }
+    .cta-button-primary:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 7px 25px rgba(67, 100, 247, 0.3);
+    }
+    .cta-button-secondary {
+        transition: all 0.3s ease;
+        background-color: #e9ecef;
+    }
+    .cta-button-secondary:hover {
+        transform: translateY(-3px) scale(1.02);
+        background-color: #dee2e6;
+    }
+    
+    /* --- ENHANCED SECTION STYLES --- */
+    .feature-card {
+        background-color: #ffffff;
+        border-radius: 1rem;
+        padding: 2.5rem;
+        box-shadow: 0 10px 30px rgba(0, 82, 212, 0.05);
+        border: 1px solid #e5e7eb;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 35px rgba(0, 82, 212, 0.1);
+    }
+    
+    /* --- CORRECTED: TESTIMONIALS SECTION --- */
+    #testimonial-container {
+        perspective: 2000px;
+        position: relative;
+        transition: height 0.4s ease-in-out;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .testimonial-card {
+        /* Base styles */
+        background-color: #fff;
+        border-radius: 1rem;
+        padding: 2.5rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.07);
+        border: 1px solid #e5e7eb;
+        
+        /* 3D flip styles */
+        position: absolute; 
+        top: 0;
+        left: 0;
+        width: 100%; /* Takes width of centered container */
+        transform-style: preserve-3d;
+        backface-visibility: hidden;
+        display: none; /* Controlled by JS */
+    }
+
+    .testimonial-card.active {
+        display: block;
+    }
+
+    .testimonial-quote {
+        font-size: 1.25rem;
+        font-weight: 500;
+        line-height: 1.6;
+        color: #343a40;
+    }
+    .testimonial-author {
+        margin-top: 1.5rem;
+        display: flex;
+        align-items: center;
+    }
+    .testimonial-author img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 1rem;
+    }
+    .testimonial-dots {
+        display: flex;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+    .testimonial-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #ced4da;
+        margin: 0 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+    .testimonial-dot.active {
+        background-color: #4364F7;
+        transform: scale(1.2);
+    }
+
+    /* --- RESPONSIVE NAVIGATION --- */
+    .mobile-menu {
+        display: none;
+        background-color: white;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <!-- =================================== -->
+    <!--     1. NAVIGATION & HERO            -->
+    <!-- =================================== -->
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <a href="https://protofolio-aditya.vercel.app/" target="_blank" rel="noopener noreferrer">
+                    <img src="{% static 'attendance/images/geolat.png' %}" alt="GeoLat" class="h-10 w-auto">
+                </a>
+                <nav class="hidden md:flex items-center space-x-8 text-gray-600">
+                    <a href="#features" class="hover:text-blue-600 transition-colors">Features</a>
+                    <a href="#testimonials" class="hover:text-blue-600 transition-colors">Testimonials</a>
+                    <a href="#how-it-works" class="hover:text-blue-600 transition-colors">Process</a>
+                </nav>
+                <div class="flex items-center">
+                     <a href="{% url 'teacher_dashboard' %}" class="hidden md:block px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg cta-button-primary">
+                        Go to Dashboard
+                    </a>
+                    <!-- Mobile Menu Button -->
+                    <div class="md:hidden ml-4">
+                        <button id="mobile-menu-button" class="text-gray-800 focus:outline-none">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="mobile-menu md:hidden">
+            <a href="#features" class="block py-2 px-6 text-sm text-gray-700 hover:bg-gray-100">Features</a>
+            <a href="#testimonials" class="block py-2 px-6 text-sm text-gray-700 hover:bg-gray-100">Testimonials</a>
+            <a href="#how-it-works" class="block py-2 px-6 text-sm text-gray-700 hover:bg-gray-100">Process</a>
+            <div class="border-t border-gray-200 my-2"></div>
+            <a href="{% url 'teacher_dashboard' %}" class="block m-4 px-5 py-2 text-sm font-medium text-white text-center bg-blue-600 rounded-lg cta-button-primary">Go to Dashboard</a>
+        </div>
+    </header>
+
+    <main>
+        <section class="relative py-24 md:py-32 overflow-hidden">
+            <div id="hero-canvas-container"></div>
+            <div class="container mx-auto text-center px-6 relative z-10">
+                <h1 class="text-4xl md:text-6xl font-extrabold leading-tight mb-4 text-gray-900" data-aos="fade-up">
+                    The Future of <span class="gradient-text">Attendance</span> is Here.
+                </h1>
+                <p class="text-lg md:text-xl text-gray-600 mb-10 max-w-3xl mx-auto" data-aos="fade-up" data-aos-delay="200">
+                    GeoLat provides smart, secure, and effortless attendance tracking for modern education. Ditch the paperwork and embrace real-time data.
+                </p>
+                <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4" data-aos="fade-up" data-aos-delay="400">
+                    <a href="{% url 'teacher_dashboard' %}" class="w-full sm:w-auto px-8 py-4 text-lg font-semibold text-white rounded-lg cta-button-primary">
+                        Get Started For Free
+                    </a>
+                    <a href="#features" class="w-full sm:w-auto px-8 py-4 text-lg font-semibold text-gray-700 rounded-lg cta-button-secondary">
+                        Explore Features
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================================== -->
+        <!--     2. FEATURES (VISUAL-FIRST)    -->
+        <!-- =================================== -->
+        <section id="features" class="py-20 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-20" data-aos="fade-up">
+                    <h2 class="text-3xl md:text-4xl font-bold text-gray-900">Technology That Transforms Classrooms</h2>
+                    <p class="text-lg text-gray-600 mt-4 max-w-2xl mx-auto">Our core features, visualized. Interact with the models to see them in action.</p>
+                </div>
+
+                <!-- Feature 1: Versatility -->
+                <div class="flex flex-col md:flex-row items-center gap-12 mb-24">
+                    <div class="md:w-1/2" data-aos="fade-right" data-aos-duration="800">
+                        <h3 class="text-3xl font-bold mb-3">Dual-Mode <span class="gradient-text">Versatility</span></h3>
+                        <p class="text-gray-600 text-lg">Effortlessly switch between precise GPS geofencing and secure offline hotspots. GeoLat adapts to any learning environment, online or off-grid.</p>
+                    </div>
+                    <div class="md:w-1/2" data-aos="zoom-in" data-aos-duration="800">
+                        <div id="canvas-container-1" class="three-canvas-container">
+                            <div class="interaction-hint">Click to Toggle Mode</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feature 2: Security -->
+                <div class="flex flex-col md:flex-row-reverse items-center gap-12 mb-24">
+                       <div class="md:w-1/2" data-aos="fade-left" data-aos-duration="800">
+                        <h3 class="text-3xl font-bold mb-3">Ironclad <span class="gradient-text">Security</span></h3>
+                        <p class="text-gray-600 text-lg">Our multi-layered system combines virtual perimeters and network verification to create a fool-proof barrier against buddy-punching.</p>
+                    </div>
+                    <div class="md:w-1/2" data-aos="zoom-in" data-aos-duration="800">
+                        <div id="canvas-container-2" class="three-canvas-container">
+                            <div class="interaction-hint">Unauthorized Attempt Blocked</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feature 3: Analytics -->
+                <div class="flex flex-col md:flex-row items-center gap-12">
+                    <div class="md:w-1/2" data-aos="fade-right" data-aos-duration="800">
+                        <h3 class="text-3xl font-bold mb-3">Instant <span class="gradient-text">Insights</span></h3>
+                        <p class="text-gray-600 text-lg">Transform raw attendance data into actionable insights. Identify trends, track engagement, and generate reports with a single click.</p>
+                    </div>
+                    <div class="md:w-1/2" data-aos="zoom-in" data-aos-duration="800">
+                        <div id="canvas-container-3" class="three-canvas-container">
+                                 <div class="interaction-hint">Click to Analyze Data</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================================== -->
+        <!--     4. TESTIMONIALS               -->
+        <!-- =================================== -->
+        <section id="testimonials" class="py-20 bg-gray-50">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16" data-aos="fade-up">
+                    <h2 class="text-3xl md:text-4xl font-bold">Trusted by Leading Institutions</h2>
+                    <p class="text-lg text-gray-600 mt-4">See how educators are revolutionizing their classrooms with GeoLat.</p>
+                </div>
+                <!-- This is the main container for the 3D flip animation -->
+                <div id="testimonial-container" data-aos="fade-up" data-aos-delay="200">
+                    <!-- Testimonial 1 -->
+                    <div class="testimonial-card">
+                        <p class="testimonial-quote">"GeoLat has been a game-changer for my large lectures. What used to take 10 minutes of valuable class time now takes seconds. The data analytics are a fantastic bonus!"</p>
+                        <div class="testimonial-author">
+                            <img src="https://placehold.co/100x100/EFEFEF/333333?text=SA" alt="Author Dr. Sarah Adams">
+                            <div>
+                                <h4 class="font-bold text-gray-900">Dr. Sarah Adams</h4>
+                                <p class="text-sm text-gray-500">Professor of Engineering, Innovate University</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Testimonial 2 -->
+                    <div class="testimonial-card">
+                        <p class="testimonial-quote">"The offline hotspot mode is brilliant for our field trips. I never have to worry about connectivity issues, and I always have an accurate record of who is present. Highly recommended!"</p>
+                        <div class="testimonial-author">
+                            <img src="https://placehold.co/100x100/D4E2F8/333333?text=MJ" alt="Author Mark Johnson">
+                            <div>
+                                <h4 class="font-bold text-gray-900">Mark Johnson</h4>
+                                <p class="text-sm text-gray-500">Head of Science Dept, Crestwood High</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Testimonial 3 -->
+                    <div class="testimonial-card">
+                        <p class="testimonial-quote">"As an administrator, GeoLat gives me the oversight I need. The reporting tools make it easy to track attendance trends across the entire school and support our student success initiatives."</p>
+                        <div class="testimonial-author">
+                            <img src="https://placehold.co/100x100/F8D4D4/333333?text=LC" alt="Author Dr. Linda Carter">
+                            <div>
+                                <h4 class="font-bold text-gray-900">Dr. Linda Carter</h4>
+                                <p class="text-sm text-gray-500">Dean of Students, Lakeside College</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="testimonial-dots" class="testimonial-dots"></div>
+            </div>
+        </section>
+
+        <!-- =================================== -->
+        <!--     5. HOW IT WORKS                 -->
+        <!-- =================================== -->
+        <section id="how-it-works" class="py-20 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16" data-aos="fade-up">
+                    <h2 class="text-3xl md:text-4xl font-bold">Effortless in Three Steps</h2>
+                    <p class="text-lg text-gray-600 mt-4">A seamless process for educators and students.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                    <div class="feature-card" data-aos="fade-up" data-aos-delay="100">
+                        <h3 class="text-xl font-bold mb-2">1. Create Session</h3>
+                        <p class="text-gray-600">Educator sets the attendance parameters (GPS or Hotspot) in seconds.</p>
+                    </div>
+                    <div class="feature-card" data-aos="fade-up" data-aos-delay="200">
+                        <h3 class="text-xl font-bold mb-2">2. Students Check In</h3>
+                        <p class="text-gray-600">Students tap a link or scan a QR code on their device. No app needed.</p>
+                    </div>
+                    <div class="feature-card" data-aos="fade-up" data-aos-delay="300">
+                        <h3 class="text-xl font-bold mb-2">3. Get Verified Data</h3>
+                        <p class="text-gray-600">Presence is instantly verified and recorded on the educator's dashboard.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =================================== -->
+        <!--     6. FINAL CTA                    -->
+        <!-- =================================== -->
+        <section class="py-20 bg-gray-50">
+            <div class="container mx-auto px-6 text-center" data-aos="fade-up">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Ready to Modernize Your Attendance?</h2>
+                <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">Join today and streamline your classroom management. No credit card required.</p>
+                <a href="{% url 'teacher_dashboard' %}" class="px-10 py-4 text-xl font-semibold text-white rounded-lg cta-button-primary">
+                    Start For Free Today
+                </a>
+            </div>
+        </section>
+    </main>
+    
+    <!-- =================================== -->
+    <!--     7. FOOTER                       -->
+    <!-- =================================== -->
+    <footer class="bg-white border-t border-gray-200">
+        <div class="container mx-auto px-6 py-8">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="mb-6 md:mb-0 text-center md:text-left">
+                    <a href="#" class="text-xl font-bold text-gray-900">GeoLat</a>
+                    <p class="text-gray-500 mt-1">&copy; {% now "Y" %} GeoLat. All Rights Reserved.</p>
+                </div>
+                <div class="flex space-x-6 text-gray-500">
+                    <a href="#" class="hover:text-blue-600 transition-colors">Contact</a>
+                    <a href="#" class="hover:text-blue-600 transition-colors">Terms</a>
+                    <a href="#" class="hover:text-blue-600 transition-colors">Privacy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.9.1/dist/gsap.min.js" defer></script>
+<script type="module">
+    // This module ensures Three.js is available as a global for the main script.
+    import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
+    window.THREE = THREE;
+</script>
+
+<script>
+document.addEventListener('contextmenu', event => event.preventDefault());
+document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey && (e.key === 'c' || e.key === 'u')) || e.key === 'F12') {
+        e.preventDefault();
+    }
+});
+document.addEventListener('DOMContentLoaded', function() {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Initialize AOS library for scroll animations
+    if (!prefersReducedMotion) {
+        AOS.init({ duration: 800, once: true, offset: 50 });
+    }
+
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetElement = document.querySelector(this.getAttribute('href'));
+            if (targetElement) {
+                targetElement.scrollIntoView({ behavior: 'smooth' });
+                // Close mobile menu on navigation
+                document.getElementById('mobile-menu').style.display = 'none';
+            }
+        });
+    });
+
+    // Mobile menu toggle
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    mobileMenuButton.addEventListener('click', () => {
+        const isMenuOpen = mobileMenu.style.display === 'block';
+        mobileMenu.style.display = isMenuOpen ? 'none' : 'block';
+    });
+    
+    // --- Testimonial Carousel ---
+    const testimonials = document.querySelectorAll('.testimonial-card');
+    const dotsContainer = document.getElementById('testimonial-dots');
+    const testimonialContainer = document.getElementById('testimonial-container');
+    let currentTestimonial = 0;
+    let testimonialInterval;
+    let isAnimating = false;
+
+    function showTestimonial(newIndex, isFirstLoad = false) {
+        if (isAnimating || newIndex === currentTestimonial) {
+            return;
+        }
+        isAnimating = true;
+
+        const oldCard = testimonials[currentTestimonial];
+        const newCard = testimonials[newIndex];
+
+        // Accurately get the height of the new card
+        gsap.set(newCard, { display: 'block', opacity: 0 });
+        const newCardHeight = newCard.offsetHeight;
+        gsap.set(newCard, { display: 'none', opacity: 1 });
+
+        // Timeline for the transition
+        const tl = gsap.timeline({
+            onComplete: () => {
+                gsap.set(oldCard, { display: 'none', rotationY: 0 });
+                newCard.classList.add('active');
+                currentTestimonial = newIndex;
+                isAnimating = false;
+            }
+        });
+
+        // 1. Animate container height
+        tl.to(testimonialContainer, {
+            height: newCardHeight,
+            duration: 0.4,
+            ease: 'power2.inOut'
+        });
+
+        // 2. Flip out the old card (if it's not the first load)
+        if (!isFirstLoad) {
+            tl.to(oldCard, {
+                rotationY: 180,
+                duration: 0.6,
+                ease: 'power3.inOut',
+                onComplete: () => {
+                    oldCard.classList.remove('active');
+                }
+            }, "-=0.4"); // Overlap with height animation
+        }
+
+        // 3. Prepare and flip in the new card
+        gsap.set(newCard, { display: 'block', rotationY: -180 });
+        tl.to(newCard, {
+            rotationY: 0,
+            duration: 0.6,
+            ease: 'power3.out'
+        }, "-=0.4"); // Overlap slightly
+
+        // Update dots
+        const dots = document.querySelectorAll('.testimonial-dot');
+        dots.forEach((dot, i) => {
+            dot.classList.toggle('active', i === newIndex);
+        });
+    }
+
+    function startTestimonialCarousel() {
+        clearInterval(testimonialInterval); // Clear existing interval
+        testimonialInterval = setInterval(() => {
+            let next = (currentTestimonial + 1) % testimonials.length;
+            showTestimonial(next);
+        }, 5000);
+    }
+    
+    if (testimonials.length > 0) {
+        // Create dots
+        testimonials.forEach((_, i) => {
+            const dot = document.createElement('div');
+            dot.classList.add('testimonial-dot');
+            dot.addEventListener('click', () => {
+                if (i !== currentTestimonial) {
+                    showTestimonial(i);
+                    startTestimonialCarousel(); // Restart timer on manual click
+                }
+            });
+            dotsContainer.appendChild(dot);
+        });
+
+        // Initial setup
+        const firstCard = testimonials[0];
+        firstCard.classList.add('active');
+        gsap.set(firstCard, { display: 'block' });
+        testimonialContainer.style.height = firstCard.offsetHeight + 'px';
+        document.querySelector('.testimonial-dot').classList.add('active');
+        
+        startTestimonialCarousel();
+    }
+
+
+    // A short delay to ensure libraries are loaded via defer.
+    setTimeout(() => {
+        if (typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && !prefersReducedMotion) {
+            
+            // --- General Scene Setup Utility ---
+            const setupScene = (containerId) => {
+                const container = document.getElementById(containerId);
+                if (!container) return null;
+
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+                camera.position.z = 5;
+
+                const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                container.appendChild(renderer.domElement);
+                
+                const group = new THREE.Group();
+                scene.add(group);
+
+                let isDragging = false;
+                let previousPointerPosition = { x: 0, y: 0 };
+                
+                const onPointerDown = (e) => {
+                    isDragging = true;
+                    container.classList.add('interacted');
+                    const x = e.clientX || (e.touches && e.touches[0].clientX);
+                    const y = e.clientY || (e.touches && e.touches[0].clientY);
+                    previousPointerPosition = { x, y };
+                };
+
+                const onPointerMove = (e) => {
+                    if (!isDragging) return;
+                    const x = e.clientX || (e.touches && e.touches[0].clientX);
+                    const y = e.clientY || (e.touches && e.touches[0].clientY);
+                    const deltaX = x - previousPointerPosition.x;
+                    const deltaY = y - previousPointerPosition.y;
+                    group.rotation.y += deltaX * 0.005;
+                    group.rotation.x += deltaY * 0.005;
+                    previousPointerPosition = { x, y };
+                };
+
+                const onPointerUp = () => { isDragging = false; };
+                
+                container.addEventListener('mousedown', onPointerDown);
+                container.addEventListener('mousemove', onPointerMove);
+                window.addEventListener('mouseup', onPointerUp);
+                container.addEventListener('touchstart', onPointerDown, { passive: true });
+                container.addEventListener('touchmove', onPointerMove, { passive: true });
+                window.addEventListener('touchend', onPointerUp);
+
+                window.addEventListener('resize', () => {
+                    camera.aspect = container.clientWidth / container.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(container.clientWidth, container.clientHeight);
+                }, false);
+
+                return { scene, camera, renderer, group, container, isDragging: () => isDragging };
+            };
+
+            // --- Hero Background Scene ---
+            const heroScene = (() => {
+                const container = document.getElementById('hero-canvas-container');
+                if (!container) return;
+
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                camera.position.z = 50;
+
+                const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                container.appendChild(renderer.domElement);
+
+                const particlesGeometry = new THREE.BufferGeometry();
+                const count = 3000;
+                const positions = new Float32Array(count * 3);
+                for (let i = 0; i < count * 3; i++) {
+                    positions[i] = (Math.random() - 0.5) * 200;
+                }
+                particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const particlesMaterial = new THREE.PointsMaterial({
+                    size: 0.1,
+                    color: 0x4364F7,
+                    transparent: true,
+                    opacity: 0.7,
+                    blending: THREE.AdditiveBlending
+                });
+                const particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
+                scene.add(particleSystem);
+
+                const mouse = new THREE.Vector2();
+                document.addEventListener('mousemove', (e) => {
+                    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                });
+                
+                window.addEventListener('resize', () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                }, false);
+
+                const clock = new THREE.Clock();
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const elapsedTime = clock.getElapsedTime();
+                    particleSystem.rotation.y = elapsedTime * 0.05;
+                    
+                    camera.position.x += (mouse.x * 5 - camera.position.x) * 0.05;
+                    camera.position.y += (mouse.y * 5 - camera.position.y) * 0.05;
+                    camera.lookAt(scene.position);
+
+                    renderer.render(scene, camera);
+                };
+                animate();
+            })();
+
+            // --- Scene 1: Environment Adaptive Globe ---
+            const scene1 = setupScene('canvas-container-1');
+            if (scene1) {
+                scene1.camera.position.z = 6;
+                scene1.scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+                const light1 = new THREE.DirectionalLight(0xffffff, 1);
+                light1.position.set(5, 5, 5);
+                scene1.scene.add(light1);
+
+                const globeMaterial = new THREE.MeshStandardMaterial({ color: 0x4364F7, transparent: true, opacity: 0.2, metalness: 0.1, roughness: 0.8 });
+                const globe = new THREE.Mesh(new THREE.IcosahedronGeometry(2.5, 5), globeMaterial);
+                const wireframe = new THREE.LineSegments(new THREE.WireframeGeometry(globe.geometry), new THREE.LineBasicMaterial({ color: 0x4364F7, transparent: true, opacity: 0.3 }));
+                scene1.group.add(globe, wireframe);
+
+                const gpsGroup = new THREE.Group();
+                const hotspotGroup = new THREE.Group();
+                scene1.group.add(gpsGroup, hotspotGroup);
+
+                for (let i = 0; i < 10; i++) {
+                    const pin = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 16), new THREE.MeshStandardMaterial({ color: 0x6FB1FC, emissive: 0x6FB1FC, emissiveIntensity: 0.5 }));
+                    const pos = new THREE.Vector3().setFromSphericalCoords(2.6, Math.acos(2 * Math.random() - 1), Math.random() * Math.PI * 2);
+                    pin.position.copy(pos);
+                    gpsGroup.add(pin);
+                }
+
+                const hotspotCenter = new THREE.Mesh(new THREE.IcosahedronGeometry(0.2, 1), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1 }));
+                hotspotGroup.add(hotspotCenter);
+                hotspotGroup.visible = false;
+
+                let isGpsMode = true;
+                scene1.container.addEventListener('click', () => {
+                    if (scene1.isDragging()) return;
+                    isGpsMode = !isGpsMode;
+                    gsap.to(gpsGroup, { visible: isGpsMode, duration: 0 });
+                    gsap.to(hotspotGroup, { visible: !isGpsMode, duration: 0 });
+                    if (isGpsMode) {
+                        gpsGroup.children.forEach(pin => {
+                            gsap.fromTo(pin.scale, { x: 0, y: 0, z: 0 }, { x: 1, y: 1, z: 1, duration: 0.5, ease: 'back.out(1.7)' });
+                        });
+                    }
+                });
+
+                const animate1 = (time) => {
+                    requestAnimationFrame(animate1);
+                    if (!scene1.isDragging()) scene1.group.rotation.y += 0.001;
+                    if (!isGpsMode) {
+                        if (Math.random() > 0.98) {
+                            const ring = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.02, 16, 100), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true }));
+                            ring.lookAt(new THREE.Vector3(0, 1, 0));
+                            hotspotGroup.add(ring);
+                            gsap.to(ring.scale, { x: 15, y: 15, z: 15, duration: 2, ease: 'power2.out' });
+                            gsap.to(ring.material, { opacity: 0, duration: 2, ease: 'power2.out', onComplete: () => hotspotGroup.remove(ring) });
+                        }
+                    }
+                    scene1.renderer.render(scene1.scene, scene1.camera);
+                };
+                animate1();
+            }
+
+            // --- Scene 2: Security Lock & Key ---
+            const scene2 = setupScene('canvas-container-2');
+            if (scene2) {
+                scene2.camera.position.z = 7;
+                scene2.scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+                const light2 = new THREE.DirectionalLight(0xffffff, 1);
+                light2.position.set(0, 5, 5);
+                scene2.scene.add(light2);
+
+                const lockBody = new THREE.Mesh(new THREE.BoxGeometry(2, 1.5, 0.5), new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 }));
+                const lockShackle = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.2, 16, 100, Math.PI), new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 }));
+                lockShackle.position.y = 1.1;
+                scene2.group.add(lockBody, lockShackle);
+
+                const keyhole = new THREE.Mesh(new THREE.CircleGeometry(0.2, 32), new THREE.MeshBasicMaterial({ color: 0x222222 }));
+                keyhole.position.z = 0.26;
+                lockBody.add(keyhole);
+
+                function runSecurityCheck() {
+                    const unauthorizedDot = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 1 }));
+                    unauthorizedDot.position.set(4, 0, 1);
+                    scene2.group.add(unauthorizedDot);
+                    gsap.timeline({ onComplete: () => scene2.group.remove(unauthorizedDot) })
+                        .to(unauthorizedDot.position, { x: 1.5, y: 0, z: 1, duration: 1, ease: 'power2.in' })
+                        .to(lockBody.rotation, { z: 0.1, duration: 0.05, yoyo: true, repeat: 7, ease: 'power1.inOut' })
+                        .to(unauthorizedDot.position, { x: 4, duration: 1, ease: 'power2.out' });
+                }
+                setInterval(runSecurityCheck, 4000);
+                runSecurityCheck();
+                
+                const animate2 = () => {
+                    requestAnimationFrame(animate2);
+                    if (!scene2.isDragging()) scene2.group.rotation.y += 0.001;
+                    scene2.renderer.render(scene2.scene, scene2.camera);
+                };
+                animate2();
+            }
+
+            // --- Scene 3: Data Molecule to Dashboard ---
+            const scene3 = setupScene('canvas-container-3');
+            if (scene3) {
+                scene3.camera.position.z = 10;
+                const count = 2000;
+                const particles = new THREE.BufferGeometry();
+                const positions = new Float32Array(count * 3);
+                const colors = new Float32Array(count * 3);
+                
+                const colorPalette = [new THREE.Color(0x0052D4), new THREE.Color(0x4364F7), new THREE.Color(0x6FB1FC)];
+                const moleculeTargets = [], chartTargets = [];
+
+                for (let i = 0; i < count; i++) {
+                    const t = Math.random() * Math.PI * 2;
+                    const r = 2.5 + Math.sin(t * 5) * 0.5;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    moleculeTargets.push(r * Math.cos(t) * Math.sin(phi), r * Math.sin(t) * Math.sin(phi), r * Math.cos(phi));
+
+                    const barIndex = Math.floor(Math.random() * 6);
+                    const barHeight = Math.random() * 4;
+                    chartTargets.push(-5 + (barIndex * 2), barHeight - 2, (Math.random() - 0.5) * 2);
+                    
+                    positions.set(moleculeTargets.slice(i * 3, i * 3 + 3), i * 3);
+                    colors.set(colorPalette[i % 3].toArray(), i * 3);
+                }
+
+                particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                
+                const material = new THREE.PointsMaterial({ size: 0.12, vertexColors: true, blending: THREE.AdditiveBlending, transparent: true });
+                const points = new THREE.Points(particles, material);
+                scene3.group.add(points);
+
+                let isAnalyzed = false;
+                scene3.container.addEventListener('click', () => {
+                    if (scene3.isDragging()) return;
+                    const targetArray = isAnalyzed ? moleculeTargets : chartTargets;
+                    isAnalyzed = !isAnalyzed;
+                    gsap.to(points.geometry.attributes.position.array, {
+                        endArray: targetArray, duration: 2, ease: 'power3.inOut',
+                        onUpdate: () => points.geometry.attributes.position.needsUpdate = true
+                    });
+                     gsap.to(scene3.group.rotation, {
+                        x: isAnalyzed ? 0 : scene3.group.rotation.x,
+                        y: isAnalyzed ? 0 : scene3.group.rotation.y,
+                        z: isAnalyzed ? 0 : scene3.group.rotation.z,
+                        duration: 1.5,
+                        ease: 'power3.inOut'
+                    });
+                });
+
+                const animate3 = (time) => {
+                    requestAnimationFrame(animate3);
+                    if (!scene3.isDragging() && !isAnalyzed) {
+                         scene3.group.rotation.y = time * 0.0002;
+                    }
+                    scene3.renderer.render(scene3.scene, scene3.camera);
+                };
+                animate3();
+            }
+        }
+    }, 100);
+});
+</script>
+{% endblock %}
