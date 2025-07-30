@@ -1,159 +1,149 @@
-# GeoLat: Geo-Location Based Attendance System
+# Offline Attendance System
 
-GeoLat is a web-based application built with Django that allows for taking attendance based on the user's geographical location. It is designed for scenarios like classrooms, workshops, or small events where attendance needs to be verified against a specific location.
+## 1. Overview
 
-A teacher can create an attendance "session," which captures the teacher's current location. Students can then "check-in" or "check-out" of the session. The system verifies that the student is within a predefined radius of the teacher's location before marking their attendance.
+This project is a self-hosted, offline-first attendance management system designed for educational environments where internet connectivity is unreliable or unavailable. By creating a localized network via a standard Wi-Fi router or a mobile hotspot, the system enables teachers to conduct secure and verifiable attendance sessions. Students connect to this local network and use a unique session link to register their presence, which is validated through a multi-layered security protocol, ensuring data integrity and preventing academic dishonesty.
 
-## Table of Contents
+The entire ecosystem—from session creation to student check-in and dashboard monitoring—operates entirely on the Local Area Network (LAN), requiring zero internet access.
 
-- [Features](#features)
-- [How It Works](#how-it-works)
-- [Project Structure](#project-structure)
-- [Setup and Installation](#setup-and-installation)
-- [Usage](#usage)
-- [Dependencies](#dependencies)
+## 2. Core Features
 
-## Features
+* **Server-Independent Offline Operation:** Functions entirely within a local network, making it ideal for classrooms, workshops, and field locations.
+* **Flexible Session Types:**
+    * **Single Check-In:** A one-time attendance mark at the beginning of a session.
+    * **Double Check-In:** Requires students to check-in at the start and check-out at the end, enforcing session duration.
+* **Dynamic Session Control:** Teachers can define active time windows for check-in and specify minimum time intervals between check-in and check-out.
+* **Effortless Onboarding:** Generates a session-specific URL and two QR codes: one for the attendance link and another for instant Wi-Fi network configuration (SSID/Password).
+* **Real-Time Monitoring:** A live dashboard for the teacher to track attendance submissions, view student details, and manually enable the "Check-Out" phase.
+* **Robust Anti-Manipulation Framework:** Implements a suite of security measures to prevent impersonation and proxy attendance.
 
--   **Teacher Dashboard:** Teachers can create new attendance sessions and view details of past sessions.
--   **Session Management:** Each session is identified by a unique code and is tied to the teacher's geographical coordinates at the time of creation.
--   **Student Check-in/Check-out:** Students can join a session using its unique code and mark their attendance.
--   **Geo-fencing:** The core feature of the application. It uses the student's browser-based location and compares it to the session's location. Attendance is only successful if the student is within a 100-meter radius.
--   **Attendance Tracking:** Records the check-in and check-out times for each student in a session.
+## 3. How It Works: The Offline Architecture
 
-## How It Works
+The system's ability to function without the internet is based on standard local networking principles, where all communication is restricted to the physical boundaries of the Wi-Fi signal.
 
-The application flow is divided into two main user roles: Teacher and Student.
+1.  **LAN Creation:** The teacher initiates a private network using a Wi-Fi router or by activating the mobile hotspot feature on their device. This creates an isolated LAN.
+2.  **DHCP and IP Address Assignment:** The router/hotspot acts as a DHCP (Dynamic Host Configuration Protocol) server, automatically assigning a unique private IP address (e.g., `192.168.1.x` or `172.20.10.x`) to every device that connects to it, including the teacher's machine and each student's device.
+3.  **Local Server Hosting:** The backend application (a Django server) runs directly on the teacher's computer. This machine becomes the host server for the attendance application, accessible only to other devices on the same LAN.
+4.  **IP-Based Communication:** When the teacher creates a session, the generated attendance link is based on the local IP address of their machine (e.g., `http://192.168.1.5:8000`). When a student connected to the same network navigates to this URL, their browser sends an HTTP request directly to the teacher's machine over the local network. The request never leaves the LAN and does not traverse the public internet.
+5.  **Data Persistence:** All attendance data is stored locally on the teacher's machine in the SQLite database, ensuring data sovereignty and privacy.
 
-1.  **Session Creation (Teacher):**
-    * A teacher navigates to the "Create Session" page.
-    * The browser prompts for location access. Once granted, the teacher's latitude and longitude are captured.
-    * Upon submission, a new `Session` object is created in the database with the captured coordinates and a unique 6-character code is generated.
-    * The teacher shares this code with the students.
+This architecture guarantees that only individuals physically present and connected to the designated local network can access the attendance portal.
 
-2.  **Attendance (Student):**
-    * A student goes to the home page and enters the session code provided by the teacher.
-    * The system validates the code and directs the student to the check-in/check-out form.
-    * The student enters their name and email. The browser again requests their location.
-    * This location data, along with the student's details, is sent to the server.
+```
++---------------------------------+
+|      Teacher's Device           |
+|  (e.g., Laptop)                 |
+|                                 |
+|  - Runs Web Server (Backend)    |
+|  - Hosts Attendance App         |
+|  - Local IP: 192.168.1.5        |
+|  - Creates Mobile Hotspot/      |
+|    Connects to Local Wi-Fi      |
++---------------------------------+
+      ^                ^
+      | Wi-Fi Signal   | Wi-Fi Signal
+      | (IEEE 802.11)  | (IEEE 802.11)
+      v                v
++----------------+   +----------------+
+| Student Device |   | Student Device |
+| - Connects to  |   | - Connects to  |
+|   Hotspot/Wi-Fi|   |   Hotspot/Wi-Fi|
+| - Local IP:    |   | - Local IP:    |
+|   192.168.1.6  |   |   192.168.1.7  |
+| - Accesses URL |   | - Accesses URL |
+|   via Browser  |   |   via Browser  |
++----------------+   +----------------+
+```
 
-3.  **Location Verification (Backend):**
-    * The backend receives the student's coordinates and the session's coordinates from the database.
-    * It uses the `geopy` library to calculate the great-circle distance between the two points.
-    * If the calculated distance is less than or equal to the allowed radius (hardcoded to 100 meters in the `views.py`), the attendance is marked as successful.
-    * The student's details and their check-in/check-out time are saved in the `Attendance` model.
-    * If the distance is greater than the radius, an error page is displayed to the student.
+## 4. Security & Anti-Cheating Mechanisms
 
-4.  **Viewing Attendance (Teacher):**
-    * The teacher can go to their dashboard and click on any session to see a detailed list of all students who have successfully checked in or out.
+To ensure the integrity of the attendance data, the system relies on a combination of client-side and server-side validation techniques.
 
-## Project Structure
+* **Network-Based Access Control:** The primary security layer. The web server is only bound to the local network interface, making it physically impossible to access from outside the LAN.
+* **Ephemeral Session Tokenization:** Upon a successful initial check-in, the server generates a cryptographically secure, unique token for that specific student's session. This token is stored in the student's browser storage (e.g., `sessionStorage`) and is associated with their roll number on the server.
+* **IP Address Logging:** The server logs the local IP address for every submission using `django-ipware`, serving as a powerful deterrent and diagnostic tool to flag multiple submissions originating from a single IP address.
+* **Browser Fingerprinting (Optional Enhancement):** As an advanced measure, the system can generate a unique hash based on a combination of browser and device attributes (e.g., user-agent, screen resolution, installed fonts).
+* **Server-Side State Validation:** The application logic stringently enforces a **one-submission-per-roll-number** rule for each session.
 
-The project is a standard Django application with one core app named `attendance`.
+## 5. Proposed Tech Stack & Dependencies
 
+* **Backend:** **Django (Python)** – A high-level Python web framework that encourages rapid development and clean, pragmatic design.
+* **Frontend:** **Vanilla JavaScript (ES6+)**, **HTML5**, **CSS3** – Ensures maximum compatibility and performance on student devices.
+* **Database:** **SQLite** – The default database for Django, it's a serverless, self-contained, file-based SQL engine perfect for local data persistence.
+* **QR Code Generation:** A Python library like `qrcode` to dynamically generate QR codes.
+* **IP Address Inspection:** A library like `django-ipware` to reliably get the client's IP address.
 
-GeoLat/
-├── GeoLat/                 # Main Django project configuration
-│   ├── settings.py         # Project settings
-│   ├── urls.py             # Root URL configuration
-│   ├── wsgi.py             # WSGI entry-point
-│   └── ...
-├── attendance/             # The core application for attendance logic
-│   ├── migrations/         # Database migration files
-│   ├── templates/          # HTML templates for the app
-│   │   └── attendance/
-│   │       ├── base.html
-│   │       ├── create_session.html
-│   │       ├── error.html
-│   │       ├── home.html
-│   │       ├── session_details.html
-│   │       ├── student_checked_in.html
-│   │       ├── student_checked_out.html
-│   │       ├── student_form.html
-│   │       └── teacher_dashboard.html
-│   ├── admin.py            # Django admin configurations
-│   ├── models.py           # Database models (Session, Student, Attendance)
-│   ├── urls.py             # App-specific URL routes
-│   └── views.py            # Application logic, request handling
-├── templates/              # Global templates
-│   └── geolat/
-│       └── base.html
-├── bash.sh                 # A shell script (likely for setup or deployment)
-├── db.sqlite3              # The SQLite database file
-├── manage.py               # Django's command-line utility
-└── requirements.txt        # Python package dependencies
+### Dependencies (`requirements.txt`)
 
+```
+asgiref==3.9.1
+colorama==0.4.6
+Django==5.2.4
+django-ipware==7.0.1
+pillow==11.3.0
+qrcode==8.2
+sqlparse==0.5.3
+tzdata==2025.2
+```
 
-## Setup and Installation
+## 6. Installation and Setup
 
-To run this project on your local machine, follow these steps:
+Follow these steps to get the application running on the teacher's device.
 
-1.  **Clone the Repository / Download Files**
+### Prerequisites
+
+* **Git:** Must be installed to clone the repository.
+* **Python:** Version 3.10 or newer is required.
+
+### Steps
+
+1.  **Clone the Repository:**
     ```bash
-    git clone <repository-url>
-    cd GeoLat
-    ```
-    Or simply extract the provided project files into a folder named `GeoLat`.
-
-2.  **Create and Activate a Virtual Environment** (Recommended)
-    ```bash
-    # For Windows
-    python -m venv venv
-    venv\Scripts\activate
-
-    # For macOS/Linux
-    python3 -m venv venv
-    source venv/bin/activate
+    git clone https://github.com/AuntMayBro/geolat.git
+    cd geolat
     ```
 
-3.  **Install Dependencies**
-    Install all the required Python packages using the `requirements.txt` file.
+2.  **Create and Activate a Virtual Environment:**
+    It is highly recommended to use a virtual environment to manage project dependencies.
+
+    * **On macOS/Linux:**
+        ```bash
+        python3 -m venv venv
+        source venv/bin/activate
+        ```
+    * **On Windows:**
+        ```bash
+        python -m venv venv
+        .\venv\Scripts\activate
+        ```
+
+3.  **Install Dependencies:**
+    With the virtual environment activated, install all the required packages from the `requirements.txt` file.
     ```bash
     pip install -r requirements.txt
     ```
 
-4.  **Run Database Migrations**
-    This will apply the database schema from the `attendance/migrations` files.
+4.  **Initialize the Database:**
+    Run the `migrate` command to create the `db.sqlite3` database file and set up the necessary tables.
     ```bash
     python manage.py migrate
     ```
 
-5.  **Create a Superuser** (Optional)
-    This allows you to access the Django admin interface to manage data directly.
+5.  **Run the Local Server:**
+    Start the Django development server. You must bind it to `<<your-local-ip-address> >` to make it accessible to other devices on your local network.
     ```bash
-    python manage.py createsuperuser
+    python manage.py runserver <your-local-ip-address> :8000
     ```
-    Follow the prompts to create a username and password.
+    **Important:** Using `<your-local-ip-address> ` tells the server to listen on all available network interfaces. This is what allows students' devices on the same Wi-Fi network to connect to the teacher's machine.
 
-6.  **Run the Development Server**
-    ```bash
-    python manage.py runserver
-    ```
-    The application will be available at `http://127.0.0.1:8000/`.
+## 7. Usage Flow
 
-    **Note:** The browser's Geolocation API requires a secure context (HTTPS) to work on most modern browsers, except for `localhost`. When running locally, it should work fine. If you deploy it, you must use HTTPS.
-
-## Usage
-
--   **Teacher:**
-    1.  Go to `http://127.0.0.1:8000/teacher/`.
-    2.  Click on "Create New Session".
-    3.  Allow the browser to access your location.
-    4.  A new session with a unique code will be created. Share this code with students.
-    5.  View attendance by clicking on the session code on the dashboard.
-
--   **Student:**
-    1.  Go to the home page: `http://127.0.0.1:8000/`.
-    2.  Enter the session code.
-    3.  Fill in your name and email.
-    4.  Allow the browser to access your location for verification.
-    5.  You will see a confirmation message upon successful check-in/check-out.
-
-## Dependencies
-
-The main dependencies for this project are:
-
--   **Django:** The web framework used to build the application.
--   **geopy:** A Python library for calculating geodesic distance between geographical points.
-
-All dependencies are listed in the `requirements.txt` file.
+1.  **Network Setup:** The teacher creates a mobile hotspot or connects their device to a dedicated Wi-Fi router.
+2.  **Find IP Address:** The teacher finds their computer's local IP address (e.g., by running `ipconfig` on Windows or `ifconfig`/`ip a` on macOS/Linux).
+3.  **Launch Server:** The teacher follows the **Installation and Setup** steps above to start the server.
+4.  **Session Creation:** The teacher navigates to the admin dashboard (e.g., `http://192.168.1.5:8000/admin`) and configures a new attendance session.
+5.  **Distribution:** The system displays the session URL (using the computer's IP address) and QR codes. The teacher projects these for the class to see.
+6.  **Student Connection:** Students connect their devices to the specified Wi-Fi network and scan the QR code or manually enter the URL.
+7.  **Check-In:** Students fill in their details and submit. The server validates the request and logs their attendance.
+8.  **Live Monitoring:** The teacher observes the incoming attendance on their live dashboard.
+9.  **Session Completion:** The session automatically closes after the specified time, or the teacher can manually end it. The final attendance report is then available for export.

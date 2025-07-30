@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoLat: Interactive System Overview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Crisp White & Professional Blue -->
+    <!-- Application Structure Plan: This complete redesign uses a clean, professional, and highly-interactive layout on a light background. The structure is built with distinct, visually separated sections that use modern design patterns like interactive tabs, master-detail views, and animated reveals to create a premium user experience. The goal is to feel like a high-end product website. -->
+    <!-- Visualization & Content Choices: The 'How It Works' section is now an interactive tabbed interface, allowing users to switch between Teacher and Student roles. The 'Key Features' section uses a master-detail pattern where clicking a feature on the left reveals details on the right with a smooth animation. The 'Security' section uses animated cards that reveal more information on hover. These choices prioritize clarity, professionalism, and engaging micro-interactions. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            color: #1f2937;
+        }
+        .text-primary { color: #2563eb; }
+        .bg-primary { background-color: #2563eb; }
+        .border-primary { border-color: #2563eb; }
+        .bg-light { background-color: #f9fafb; }
+
+        .scroll-watcher {
+            height: 4px;
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+            background-color: #2563eb;
+            width: 100%;
+            scale: 0 1;
+            transform-origin: left;
+            animation: scroll-watcher linear;
+            animation-timeline: scroll();
+        }
+        @keyframes scroll-watcher { to { scale: 1 1; } }
+
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .fade-in-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .role-tab.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+        
+        .feature-item.active {
+            background-color: #eff6ff;
+            color: #1d4ed8;
+        }
+        .feature-item.active .feature-icon {
+            background-color: #2563eb;
+            color: white;
+        }
+        .feature-content-pane {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        .feature-content-pane.hidden {
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+            position: absolute;
+        }
+
+        .security-card .details {
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s ease-in-out;
+        }
+        .security-card:hover .details {
+            max-height: 200px;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .security-card:hover .icon-circle {
+             background-color: #2563eb;
+             color: white;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="scroll-watcher"></div>
+
+    <header class="bg-white/90 backdrop-blur-lg sticky top-0 z-50 border-b border-gray-200">
+        <nav class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <a href="#" class="text-2xl font-extrabold text-primary">GeoLat</a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#how-it-works" class="text-gray-600 hover:text-primary transition font-medium">How It Works</a>
+                    <a href="#features" class="text-gray-600 hover:text-primary transition font-medium">Features</a>
+                    <a href="#security" class="text-gray-600 hover:text-primary transition font-medium">Security</a>
+                    <a href="#tech-corner" class="text-gray-600 hover:text-primary transition font-medium">Tech Corner</a>
+                </div>
+                 <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-primary focus:outline-none">
+                        <span class="text-3xl">&#9776;</span>
+                    </button>
+                </div>
+            </div>
+             <div id="mobile-menu" class="hidden md:hidden mt-4">
+                <a href="#how-it-works" class="block py-2 px-4 text-sm text-gray-700 hover:bg-blue-50 rounded">How It Works</a>
+                <a href="#features" class="block py-2 px-4 text-sm text-gray-700 hover:bg-blue-50 rounded">Features</a>
+                <a href="#security" class="block py-2 px-4 text-sm text-gray-700 hover:bg-blue-50 rounded">Security</a>
+                <a href="#tech-corner" class="block py-2 px-4 text-sm text-gray-700 hover:bg-blue-50 rounded">Tech Corner</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+
+        <!-- Hero Section -->
+        <section id="hero" class="min-h-[90vh] flex items-center">
+            <div class="container mx-auto px-6">
+                <div class="text-center">
+                    <h1 class="text-5xl md:text-7xl font-extrabold text-gray-900 leading-tight fade-in-up">
+                        Secure Offline Attendance.<br class="hidden md:block"/> <span class="text-primary">Effortlessly Simple.</span>
+                    </h1>
+                    <p class="mt-6 text-lg md:text-xl text-gray-600 max-w-3xl mx-auto fade-in-up" style="transition-delay: 200ms;">
+                        GeoLat provides a robust, internet-independent solution for modern education, verifying student presence through local network connectivity.
+                    </p>
+                    <div class="mt-10 flex justify-center items-center space-x-4 fade-in-up" style="transition-delay: 400ms;">
+                        <a href="#features" class="inline-block bg-primary text-white font-bold px-8 py-4 rounded-lg shadow-lg hover:bg-blue-700 transition transform hover:scale-105">
+                            Explore Features
+                        </a>
+                        <a href="#how-it-works" class="inline-block text-gray-600 font-bold px-8 py-4 rounded-lg hover:text-primary transition">
+                            See How It Works &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section id="how-it-works" class="py-20 md:py-32 bg-light">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900 fade-in-up">The Workflow, Demystified</h2>
+                    <p class="mt-4 text-lg text-gray-600 max-w-2xl mx-auto fade-in-up">A seamless process for both educators and students. Select a role to see their journey.</p>
+                </div>
+                <div class="max-w-4xl mx-auto fade-in-up">
+                    <div class="flex justify-center border-b border-gray-200 mb-8">
+                        <button data-role="teacher" class="role-tab active text-lg font-semibold px-8 py-3 border-b-2 border-transparent transition">Teacher's Role</button>
+                        <button data-role="student" class="role-tab text-gray-500 text-lg font-semibold px-8 py-3 border-b-2 border-transparent transition">Student's Role</button>
+                    </div>
+                    <div id="teacher-workflow" class="workflow-pane space-y-6">
+                        <div class="flex items-center bg-white p-6 rounded-lg shadow-sm">
+                            <div class="flex-shrink-0 w-12 h-12 bg-blue-100 text-primary rounded-full flex items-center justify-center text-xl font-bold mr-6">1</div>
+                            <div>
+                                <h4 class="font-bold text-xl text-gray-800">Launch Network & Create Session</h4>
+                                <p class="text-gray-600 mt-1">Start a local Wi-Fi hotspot and create a new, configurable attendance session from the dashboard.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center bg-white p-6 rounded-lg shadow-sm">
+                            <div class="flex-shrink-0 w-12 h-12 bg-blue-100 text-primary rounded-full flex items-center justify-center text-xl font-bold mr-6">2</div>
+                            <div>
+                                <h4 class="font-bold text-xl text-gray-800">Share Access via QR Codes</h4>
+                                <p class="text-gray-600 mt-1">Display the auto-generated QR codes for instant Wi-Fi connection and session access.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center bg-white p-6 rounded-lg shadow-sm">
+                            <div class="flex-shrink-0 w-12 h-12 bg-blue-100 text-primary rounded-full flex items-center justify-center text-xl font-bold mr-6">3</div>
+                            <div>
+                                <h4 class="font-bold text-xl text-gray-800">Monitor & Manage</h4>
+                                <p class="text-gray-600 mt-1">Oversee check-ins on the live dashboard and control the session flow, like enabling check-out.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="student-workflow" class="workflow-pane hidden space-y-6">
+                        <div class="flex items-center bg-white p-6 rounded-lg shadow-sm">
+                            <div class="flex-shrink-0 w-12 h-12 bg-gray-200 text-gray-700 rounded-full flex items-center justify-center text-xl font-bold mr-6">1</div>
+                            <div>
+                                <h4 class="font-bold text-xl text-gray-800">Connect & Access</h4>
+                                <p class="text-gray-600 mt-1">Scan two simple QR codes to join the local network and open the attendance page.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center bg-white p-6 rounded-lg shadow-sm">
+                            <div class="flex-shrink-0 w-12 h-12 bg-gray-200 text-gray-700 rounded-full flex items-center justify-center text-xl font-bold mr-6">2</div>
+                            <div>
+                                <h4 class="font-bold text-xl text-gray-800">Check-In</h4>
+                                <p class="text-gray-600 mt-1">Enter your details to mark your presence and generate a hidden, unique security token.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center bg-white p-6 rounded-lg shadow-sm">
+                            <div class="flex-shrink-0 w-12 h-12 bg-gray-200 text-gray-700 rounded-full flex items-center justify-center text-xl font-bold mr-6">3</div>
+                            <div>
+                                <h4 class="font-bold text-xl text-gray-800">Check-Out</h4>
+                                <p class="text-gray-600 mt-1">If required, tap the "Check-Out" button when enabled by the teacher to complete your attendance.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="py-20 md:py-32">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900 fade-in-up">Powerful by Design</h2>
+                    <p class="mt-4 text-lg text-gray-600 max-w-2xl mx-auto fade-in-up">GeoLat is built with features that enhance security, flexibility, and ease of use.</p>
+                </div>
+                <div class="grid lg:grid-cols-3 gap-8 items-start fade-in-up">
+                    <div class="lg:col-span-1 space-y-3">
+                        <button data-feature="offline" class="feature-item active w-full p-4 rounded-lg flex items-center text-left transition">
+                            <div class="feature-icon w-12 h-12 rounded-lg flex-shrink-0 flex items-center justify-center mr-4 transition"><span class="text-2xl">✨</span></div>
+                            <span class="font-semibold text-lg">100% Offline Operation</span>
+                        </button>
+                        <button data-feature="secure" class="feature-item w-full p-4 rounded-lg flex items-center text-left transition bg-white hover:bg-blue-50">
+                            <div class="feature-icon w-12 h-12 bg-gray-100 text-gray-600 rounded-lg flex-shrink-0 flex items-center justify-center mr-4 transition"><span class="text-2xl">🔒</span></div>
+                            <span class="font-semibold text-lg">Secure Session Management</span>
+                        </button>
+                        <button data-feature="flexible" class="feature-item w-full p-4 rounded-lg flex items-center text-left transition bg-white hover:bg-blue-50">
+                            <div class="feature-icon w-12 h-12 bg-gray-100 text-gray-600 rounded-lg flex-shrink-0 flex items-center justify-center mr-4 transition"><span class="text-2xl">⏱️</span></div>
+                            <span class="font-semibold text-lg">Flexible Attendance Types</span>
+                        </button>
+                        <button data-feature="dashboard" class="feature-item w-full p-4 rounded-lg flex items-center text-left transition bg-white hover:bg-blue-50">
+                            <div class="feature-icon w-12 h-12 bg-gray-100 text-gray-600 rounded-lg flex-shrink-0 flex items-center justify-center mr-4 transition"><span class="text-2xl">🖥️</span></div>
+                            <span class="font-semibold text-lg">Live Teacher Dashboard</span>
+                        </button>
+                    </div>
+                    <div class="lg:col-span-2 bg-light p-8 rounded-2xl min-h-[350px] relative overflow-hidden">
+                        <div id="offline-content" class="feature-content-pane">
+                            <h3 class="text-3xl font-bold mb-4 text-primary">Operate Anywhere</h3>
+                            <p class="text-lg text-gray-600">Runs entirely without an internet connection, making it the perfect solution for any environment. The entire system operates on a local network created by a phone or router.</p>
+                        </div>
+                        <div id="secure-content" class="feature-content-pane hidden">
+                            <h3 class="text-3xl font-bold mb-4 text-primary">Total Session Control</h3>
+                            <p class="text-lg text-gray-600">Teachers have full control over attendance sessions. They can start, pause, and end sessions from a live dashboard, with customizable options to fit any classroom scenario.</p>
+                        </div>
+                        <div id="flexible-content" class="feature-content-pane hidden">
+                            <h3 class="text-3xl font-bold mb-4 text-primary">Adaptable by Nature</h3>
+                            <p class="text-lg text-gray-600">Supports both 'Single Check-In' for simple presence marking and 'Double Check-In' which requires start and end validation, with configurable time limits.</p>
+                        </div>
+                        <div id="dashboard-content" class="feature-content-pane hidden">
+                            <h3 class="text-3xl font-bold mb-4 text-primary">Real-time Overview</h3>
+                            <p class="text-lg text-gray-600">Monitor attendance in real-time as students check in. The dashboard provides an instant overview of who is present and allows for manual control of the session.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Security Section -->
+        <section id="security" class="py-20 md:py-32 bg-light">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900 fade-in-up">Engineered for Integrity</h2>
+                    <p class="mt-4 text-lg text-gray-600 max-w-2xl mx-auto fade-in-up">Academic honesty is paramount. GeoLat employs multiple layers of security to ensure every entry is legitimate.</p>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="security-card bg-white p-8 rounded-xl shadow-md cursor-pointer fade-in-up">
+                        <div class="icon-circle w-16 h-16 bg-blue-100 text-primary rounded-full flex items-center justify-center text-3xl mb-4 transition">🛡️</div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Network-Lock</h3>
+                        <p class="text-gray-600 details">The primary gate. Only devices on the correct local Wi-Fi can access the attendance page.</p>
+                    </div>
+                    <div class="security-card bg-white p-8 rounded-xl shadow-md cursor-pointer fade-in-up" style="transition-delay: 100ms;">
+                        <div class="icon-circle w-16 h-16 bg-blue-100 text-primary rounded-full flex items-center justify-center text-3xl mb-4 transition">🔑</div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Session Tokens</h3>
+                        <p class="text-gray-600 details">A secret, device-specific token prevents impersonation during check-out.</p>
+                    </div>
+                    <div class="security-card bg-white p-8 rounded-xl shadow-md cursor-pointer fade-in-up" style="transition-delay: 200ms;">
+                        <div class="icon-circle w-16 h-16 bg-blue-100 text-primary rounded-full flex items-center justify-center text-3xl mb-4 transition">☝️</div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Roll Number Lock-Out</h3>
+                        <p class="text-gray-600 details">Each roll number is restricted to a single check-in per session, eliminating duplicates.</p>
+                    </div>
+                    <div class="security-card bg-white p-8 rounded-xl shadow-md cursor-pointer fade-in-up" style="transition-delay: 300ms;">
+                        <div class="icon-circle w-16 h-16 bg-blue-100 text-primary rounded-full flex items-center justify-center text-3xl mb-4 transition">🔎</div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Device Flagging</h3>
+                        <p class="text-gray-600 details">The system identifies and flags suspicious submission patterns for teacher review.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tech Corner Section -->
+        <section id="tech-corner" class="py-20 md:py-32">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900 fade-in-up">Developer's Corner</h2>
+                    <p class="mt-4 text-lg text-gray-600 max-w-2xl mx-auto fade-in-up">A brief overview for those interested in the technical aspects of GeoLat.</p>
+                </div>
+                <div class="bg-light p-8 md:p-12 rounded-2xl grid md:grid-cols-2 gap-12 lg:gap-20 items-center fade-in-up">
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-4">Project Structure</h3>
+                        <p class="text-gray-600 mb-4">Built with Django, the project maintains a clean and modular structure within the `attendance` app.</p>
+                        <pre class="bg-gray-800 text-gray-300 p-4 rounded-lg text-sm overflow-x-auto"><code>GeoLat/
+├── attendance/       # Core application logic
+├── GeoLat/           # Django project config
+├── manage.py         # Command-line utility
+└── requirements.txt  # Dependencies</code></pre>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-4">Quick Start Guide</h3>
+                        <ol class="space-y-3 text-gray-600">
+                            <li>1. Clone repo & create Python venv.</li>
+                            <li>2. Install dependencies: <code class="bg-gray-200 text-sm px-2 py-1 rounded">pip install -r requirements.txt</code></li>
+                            <li>3. Run migrations: <code class="bg-gray-200 text-sm px-2 py-1 rounded">python manage.py migrate</code></li>
+                            <li>4. Start server on your local network:
+                                <div class="mt-2 bg-gray-800 p-3 rounded-lg flex justify-between items-center">
+                                    <code id="run-command" class="text-sm text-green-400">python manage.py runserver 0.0.0.0:8000</code>
+                                    <button id="copy-button" class="bg-gray-600 hover:bg-gray-500 text-white text-xs px-2 py-1 rounded">Copy</button>
+                                </div>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="bg-light text-gray-600 py-8">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; 2025 GeoLat System. Attendance simplified.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.15 });
+
+            document.querySelectorAll('.fade-in-up').forEach(el => observer.observe(el));
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+
+            const roleTabs = document.querySelectorAll('.role-tab');
+            const workflowPanes = document.querySelectorAll('.workflow-pane');
+            roleTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    roleTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    workflowPanes.forEach(pane => {
+                        pane.id === `${tab.dataset.role}-workflow` ? pane.classList.remove('hidden') : pane.classList.add('hidden');
+                    });
+                });
+            });
+
+            const featureItems = document.querySelectorAll('.feature-item');
+            const featureContentPanes = document.querySelectorAll('.feature-content-pane');
+            featureItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    featureItems.forEach(i => {
+                        i.classList.remove('active');
+                        i.classList.add('bg-white', 'hover:bg-blue-50');
+                        i.querySelector('.feature-icon').classList.add('bg-gray-100', 'text-gray-600');
+                        i.querySelector('.feature-icon').classList.remove('bg-primary', 'text-white');
+                    });
+                    item.classList.add('active');
+                    item.classList.remove('bg-white', 'hover:bg-blue-50');
+                    item.querySelector('.feature-icon').classList.remove('bg-gray-100', 'text-gray-600');
+                    item.querySelector('.feature-icon').classList.add('bg-primary', 'text-white');
+                    
+                    featureContentPanes.forEach(pane => {
+                        pane.id === `${item.dataset.feature}-content` ? pane.classList.remove('hidden') : pane.classList.add('hidden');
+                    });
+                });
+            });
+
+            const copyButton = document.getElementById('copy-button');
+            const runCommand = document.getElementById('run-command');
+            copyButton.addEventListener('click', () => {
+                navigator.clipboard.writeText(runCommand.innerText).then(() => {
+                    copyButton.innerText = 'Copied!';
+                    setTimeout(() => { copyButton.innerText = 'Copy'; }, 2000);
+                });
+            });
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (!mobileMenu.classList.contains('hidden')) mobileMenu.classList.add('hidden');
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

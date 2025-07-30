@@ -21,6 +21,9 @@ from .models import AttendanceSession, AttendanceRecord
 def home(request):
     return render(request,'attendance/home.html') 
 
+def readme(request):
+    return render(request,'attendance/readme.html') 
+
 def teacher_dashboard(request):
     """
     Displays a list of all created attendance sessions.

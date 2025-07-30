@@ -6,6 +6,7 @@ from . import views
 urlpatterns = [
     # Teacher URLs
     path('',views.home, name="home"),
+    path('readme',views.readme, name="readme"),
     path('dashboard', views.teacher_dashboard, name='teacher_dashboard'),
     path('session/new/', views.create_session, name='create_session'),
     path('session/<uuid:session_id>/', views.session_details, name='session_details'),
